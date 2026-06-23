@@ -1,0 +1,54 @@
+name: Build & deploy dashboard
+
+# 30 мин тутам: эх сурвалжаас дата татаж public/ үүсгээд GitHub Pages-д нийтэлнэ.
+# Service account key-г GCP_SA_KEY нэртэй нууц Secret-ээс түр файл болгож уншина (repo-д БИШ).
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore service account key (Secret → file)
+        shell: pwsh
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: $env:GCP_SA_KEY | Set-Content -Path economy-500301-47f5a778289e.json -Encoding UTF8
+
+      - name: Fetch data → public/
+        shell: pwsh
+        continue-on-error: true   # эх сурвалж унтарсан ч deploy үргэлжилнэ
+        run: |
+          New-Item -ItemType Directory -Force public | Out-Null
+          Copy-Item market_live.html public/ -Force
+          ./update_market.ps1 -OutPath public -PolicyRate 12.0 -Reserves 4.9
+          ./update_news.ps1   -OutPath public
+          ./update_weekly.ps1 -OutPath public
+
+      - name: Remove key (safety)
+        if: always()
+        shell: pwsh
+        run: Remove-Item economy-500301-47f5a778289e.json -ErrorAction SilentlyContinue
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
