@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Зах зээлийн үзүүлэлтүүд · Live</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0a0f1c;--bg2:#0f1626;--card:#121a2c;--border:#1e2c46;--border2:#2a3a5c;
+    --text:#eef2ff;--text2:#8a9ec0;--text3:#56688a;
+    --green:#22e0a1;--green-bg:rgba(34,224,161,.1);
+    --red:#ff5277;--red-bg:rgba(255,82,119,.1);
+    --amber:#f5b942;
+  }
+  body{background:radial-gradient(1200px 600px at 80% -10%,#13203a 0%,var(--bg) 55%);
+       color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:28px 20px}
+  .wrap{max-width:1080px;margin:0 auto}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+  .title h1{font-size:22px;font-weight:800;letter-spacing:-.3px}
+  .title p{font-size:13px;color:var(--text2);margin-top:4px}
+  .status{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .badge{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+         background:var(--bg2);border:1px solid var(--border);padding:7px 13px;border-radius:20px;color:var(--text2)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 var(--green);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,224,161,.5)}70%{box-shadow:0 0 0 6px rgba(34,224,161,0)}100%{box-shadow:0 0 0 0 rgba(34,224,161,0)}}
+  .dot.off{background:var(--amber);animation:none}
+  .btn{background:var(--green);color:#04140d;border:none;padding:8px 16px;border-radius:9px;
+       font-weight:700;font-size:13px;cursor:pointer;transition:transform .12s,filter .15s}
+  .btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .grid.cols4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:720px){.grid,.grid.cols4{grid-template-columns:1fr}}
+  .sec-title{font-size:15px;font-weight:800;margin:28px 0 13px;display:flex;align-items:center;gap:9px;color:var(--text)}
+  .sec-title::before{content:'';width:4px;height:19px;background:var(--accent2,var(--green));border-radius:2px}
+  .sec-title:first-of-type{margin-top:6px}
+  .c-val.sm{font-size:30px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 22px;background:var(--bg2);padding:6px;border-radius:14px;border:1px solid var(--border)}
+  .tab{flex:1;min-width:150px;padding:10px 14px;border-radius:10px;border:none;background:transparent;color:var(--text2);font-size:13.5px;font-weight:600;cursor:pointer;transition:all .15s}
+  .tab:hover{color:var(--text)}
+  .tab.active{background:var(--card);color:var(--green);box-shadow:0 1px 6px rgba(0,0,0,.3)}
+  .page{display:none}
+  .page.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .c-changes{display:flex;gap:22px;margin-top:11px}
+  .cc{display:flex;flex-direction:column;gap:3px}
+  .cc-l{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  .cc-v{font-size:13px;font-weight:700;color:var(--text3)}
+  .cc-v.up{color:var(--green)} .cc-v.dn{color:var(--red)}
+  .card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--border);
+        border-radius:16px;padding:22px 22px 16px;position:relative;overflow:hidden}
+  .card::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--accent,var(--green));opacity:.7}
+  .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:18px}
+  .c-name{font-size:14px;font-weight:700}
+  .c-sub{font-size:11px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+  .c-tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--bg);color:var(--text3);border:1px solid var(--border);white-space:nowrap}
+  .c-val{font-size:38px;font-weight:800;letter-spacing:-1px;line-height:1;font-variant-numeric:tabular-nums}
+  .c-change{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:13px;font-weight:600;
+            padding:4px 10px;border-radius:8px}
+  .up{color:var(--green);background:var(--green-bg)} .dn{color:var(--red);background:var(--red-bg)}
+  .c-spark{margin-top:16px;height:56px;width:100%}
+  .c-foot{display:flex;justify-content:space-between;margin-top:12px;font-size:11px;color:var(--text3)}
+  footer{margin-top:24px;font-size:12px;color:var(--text3);text-align:center;line-height:1.7}
+  footer code{background:var(--bg2);padding:2px 6px;border-radius:5px;color:var(--text2)}
+  /* News */
+  .news-panel{margin-top:26px}
+  .news-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .news-head h2{font-size:16px;font-weight:800;display:flex;align-items:center;gap:9px}
+  .news-head h2::before{content:'';width:4px;height:18px;background:var(--green);border-radius:2px}
+  .news-src{font-size:11px;color:var(--text3)}
+  .news-list{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(max-width:720px){.news-list{grid-template-columns:1fr}}
+  .news-item{display:flex;gap:13px;background:var(--card);border:1px solid var(--border);
+             border-radius:13px;padding:12px;text-decoration:none;color:inherit;transition:border-color .15s,transform .12s}
+  .news-item:hover{border-color:var(--green2,#2a3a5c);transform:translateY(-2px)}
+  .news-thumb{width:88px;height:64px;border-radius:9px;object-fit:cover;flex-shrink:0;background:var(--bg)}
+  .news-thumb.ph{display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--text3)}
+  .news-body{min-width:0;display:flex;flex-direction:column}
+  .news-cat{font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .news-title{font-size:13.5px;font-weight:600;line-height:1.4;color:var(--text);
+              display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .news-desc{font-size:12px;color:var(--text2);line-height:1.45;margin-top:5px;
+             display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .news-meta{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:8px;font-size:11px;color:var(--text3)}
+  .news-source{color:var(--text2);font-weight:600}
+  .news-time{font-size:11px;color:var(--text3)}
+  .news-search{display:flex;gap:8px;align-items:center}
+  .news-search input{background:var(--bg2);border:1px solid var(--border);border-radius:9px;
+    padding:8px 13px;color:var(--text);font-size:13px;width:230px;outline:none;transition:border-color .15s}
+  .news-search input:focus{border-color:var(--green)}
+  .news-search input::placeholder{color:var(--text3)}
+  .news-search button{background:var(--bg2);border:1px solid var(--border2);color:var(--text2);
+    border-radius:9px;padding:8px 12px;font-size:13px;cursor:pointer;transition:all .15s}
+  .news-search button:hover{border-color:var(--green);color:var(--green)}
+  .news-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .chip{background:var(--bg2);border:1px solid var(--border);color:var(--text2);
+    padding:6px 15px;border-radius:20px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
+  .chip:hover{border-color:var(--border2);color:var(--text)}
+  .chip.active{background:rgba(34,224,161,.12);border-color:var(--green);color:var(--green)}
+  .chip .n{opacity:.6;font-weight:500;margin-left:4px}
+  .news-mode{font-size:11px;color:var(--text3);margin-bottom:10px;display:none}
+  .news-mode b{color:var(--green)}
+  @media(max-width:720px){.news-search input{width:150px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">
+      <h1>Зах зээлийн үзүүлэлтүүд</h1>
+      <p>Монголын макро эдийн засаг ба хөрөнгийн зах зээл · бодит мэдээлэл</p>
+    </div>
+    <div class="status">
+      <span class="badge"><span class="dot" id="liveDot"></span><span id="liveText">Ачаалж байна…</span></span>
+      <button class="btn" onclick="refreshAll()">↻ Шинэчлэх</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" onclick="showPage('rate',this)">💰 Хүү ба инфляц</button>
+    <button class="tab" onclick="showPage('econ',this)">📊 Эдийн засаг</button>
+    <button class="tab" onclick="showPage('comm',this)">🛢 Түүхий эдийн ханш</button>
+    <button class="tab" onclick="showPage('weekly',this)">📅 7 хоногийн тойм</button>
+    <button class="tab" onclick="showPage('news',this)">📰 Эдийн засгийн мэдээ</button>
+  </nav>
+
+  <div class="page active" id="page-rate"><div class="grid" id="grid-rate"></div></div>
+  <div class="page" id="page-econ"><div class="grid" id="grid-econ"></div></div>
+  <div class="page" id="page-comm"><div class="grid cols4" id="grid-comm"></div></div>
+
+  <div class="page" id="page-weekly">
+    <section class="news-panel">
+      <div class="news-head">
+        <h2>7 хоногийн зах зээлийн тойм</h2>
+        <span class="news-src" id="weeklySrc">NetCapital Insights</span>
+      </div>
+      <div class="news-list" id="weeklyList"></div>
+    </section>
+  </div>
+
+  <div class="page" id="page-news">
+  <section class="news-panel">
+    <div class="news-head">
+      <h2>Эдийн засгийн мэдээ</h2>
+      <form class="news-search" id="newsSearch" onsubmit="return doSearch(event)">
+        <input id="kw" type="text" placeholder="Түлхүүр үгээр хайх (ж: инфляц, алт, экспорт)…" autocomplete="off">
+        <button type="submit">Хайх</button>
+        <button type="button" id="clearBtn" style="display:none" onclick="clearSearch()">✕</button>
+      </form>
+    </div>
+    <div class="news-chips" id="newsChips"></div>
+    <div class="news-mode" id="newsMode"></div>
+    <div class="news-list" id="newsList"></div>
+    <div class="news-src" id="newsSrc" style="margin-top:10px;text-align:right">Bloomberg TV Mongolia</div>
+  </section>
+  </div>
+
+  <footer>
+    Эх сурвалж: <b>ҮСХ</b> (1212.mn) · <b>Монголбанк</b> · <b>МХБ</b> (mse.mn)<br>
+    CPI/ДНБ нь браузераас шууд live татагдана. USD/TOP-20-г live болгохын тулд <code>update_market.ps1</code>-г
+    ажиллуулж <code>live_extra.json</code> үүсгээд, http серверээр нээнэ үү (README_setup.md).
+  </footer>
+</div>
+
+<script>
+/* ====== ЯГ ОДООНЫ БОДИТ УТГА (snapshot) — шууд нээхэд ажиллана ====== */
+const SNAP = {
+  asof: "2026-06-22 16:59",
+  cpi:  { labels:["2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"],
+          series:[9.1,9,8.9,9.7,9.9,10,8.8,8.2,8,6.8,7.7,10.1,11.3] },
+  gdp:  { labels:["2020","2021","2022","2023","2024","2025"],
+          series:[-4.84,0.1,3.543,11.857,6.998,6.302] },
+  fx:   { latest:3576.36, date:"2026-06-21",
+          series:[3576,3576,3576,3575.62,3576.35,3576.14,3576.22,3576.11,3576.11,3576.11,3576.12,3576.12,3575.94,3576.22,3576.14,3576.14,3576.14,3575.94,3576.02,3575.93,3575.99,3576.08,3576.08,3576.08,3575.78,3575.99,3576.17,3576.5,3576.42,3576.42,3576.42,3575.89,3576.03,3575.98,3576.05,3575.93,3575.93,3575.93,3575.93,3575.85,3575.99,3575.83,3576.35,3576.35,3576.35,3575.85,3576.21,3576.11,3576.28,3576.28,3576.28,3576.28,3575.8,3576.26,3576.37,3576.63,3576.36,3576.36,3576.36] },
+  top20:{ latest:51371.42, date:"2026-06-19",
+          series:[51318.49,50870.86,50980.72,50874.49,51585.86,51397.55,51348.86,51147.75,51027.28,50852.4,50843.33,50835.94,50672.65,50874.92,50787.62,50666.69,50623.3,50582.31,50648.85,50520.7,50961.19,50968.38,50716.15,50745.15,50621.95,51360.15,50502.72,51115.89,51520.46,51347.33,51209.86,51467.79,50943.59,51300.38,51282.09,51464.59,51914.26,51352.98,51266.68,51371.42] },
+  // түүхий эд — 1 сарын өдөр тутмын series (Yahoo Finance)
+  gold:   { date:"2026-06-22", series:[4521,4500.4,4447.5,4499.3,4560.5,4475.2,4489.1,4436.7,4475.8,4337.1,4335.9,4260,4108.2,4090.3,4215,4328,4330.9,4358.9,4224.1,4220.8] },
+  copper: { date:"2026-06-22", series:[6.34,6.36,6.3,6.4,6.36,6.52,6.65,6.48,6.51,6.26,6.33,6.3,6.25,6.26,6.43,6.48,6.49,6.48,6.37,6.37] },
+  oil:    { date:"2026-06-22", series:[96.6,93.89,88.68,88.9,87.36,92.16,93.76,96.02,93.04,90.54,91.3,88.2,90.03,87.71,84.88,80.75,76.05,76.79,76.6,75.23] },
+  // spot (series байхгүй) — гар тохиргоо
+  policy:  { latest:12.0, changePct:null, date:"2026-06-22" },
+  reserves:{ latest:4.9,  changePct:null, unit:"тэрбум $", date:"2026-06" },
+  coal:    { latest:112,  changePct:null, date:"2026-06-22" },
+};
+
+/* ====== Картын тохиргоо (section: rate|econ|comm, kind: series|spot) ====== */
+const CARDS = [
+  // --- Хүү ба инфляц ---
+  { key:"cpi", section:"rate", freq:"monthly", name:"Инфляц (CPI)", sub:"Жилийн · ҮСХ", accent:"#f5b942",
+    fmt:v=>v.toFixed(1)+"%", upIsGood:false, dateOf:s=>s.labels[s.labels.length-1] },
+  { key:"policy", section:"rate", freq:"spot", name:"Бодлогын хүү", sub:"Монголбанк", accent:"#f59e0b",
+    fmt:v=>v.toFixed(2)+"%", upIsGood:false },
+  // --- Эдийн засаг ---
+  { key:"gdp", section:"econ", freq:"annual", name:"ДНБ-ийн өсөлт", sub:"Жилийн, бодит · ҮСХ", accent:"#22e0a1",
+    fmt:v=>(v>=0?"+":"")+v.toFixed(1)+"%", upIsGood:true, dateOf:s=>s.labels[s.labels.length-1]+" он" },
+  { key:"reserves", section:"econ", freq:"spot", name:"Гадаад валютын нөөц", sub:"Монголбанк", accent:"#10b981",
+    fmt:v=>v.toFixed(1)+" тэрбум $", upIsGood:true },
+  { key:"fx", section:"econ", freq:"daily", name:"Ам.доллар / Төгрөг", sub:"Албан ёсны ханш · Монголбанк", accent:"#5b9dff",
+    fmt:v=>"₮"+v.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}), upIsGood:false, dateOf:s=>s.date },
+  { key:"top20", section:"econ", freq:"daily", name:"MSE TOP-20", sub:"Хаалт · МХБ", accent:"#a98bff",
+    fmt:v=>v.toLocaleString("en-US",{maximumFractionDigits:2}), upIsGood:true, dateOf:s=>s.date },
+  // --- Түүхий эдийн ханш (Yahoo Finance, 1 сарын series) ---
+  { key:"gold",   section:"comm", freq:"daily", name:"Алт", sub:"$/унц · Yahoo", accent:"#fbbf24",
+    fmt:v=>"$"+v.toLocaleString("en-US",{maximumFractionDigits:2}), upIsGood:true, dateOf:s=>s.date },
+  { key:"copper", section:"comm", freq:"daily", name:"Зэс", sub:"$/фунт · Yahoo", accent:"#fb923c",
+    fmt:v=>"$"+v.toFixed(2), upIsGood:true, dateOf:s=>s.date },
+  { key:"coal",   section:"comm", freq:"spot", name:"Нүүрс", sub:"$/тонн · гар тохиргоо", accent:"#94a3b8",
+    fmt:v=>"$"+v.toLocaleString("en-US",{maximumFractionDigits:2}), upIsGood:true },
+  { key:"oil",    section:"comm", freq:"daily", name:"Газрын тос (WTI)", sub:"$/баррель · Yahoo", accent:"#60a5fa",
+    fmt:v=>"$"+v.toFixed(2), upIsGood:true, dateOf:s=>s.date },
+];
+
+function sparkline(series, color){
+  const w=300, h=56, p=4;
+  const mn=Math.min(...series), mx=Math.max(...series), rng=(mx-mn)||1;
+  const pts=series.map((v,i)=>{
+    const x=p+(i/(series.length-1))*(w-2*p);
+    const y=h-p-((v-mn)/rng)*(h-2*p);
+    return [x,y];
+  });
+  const line=pts.map(([x,y],i)=>(i?"L":"M")+x.toFixed(1)+" "+y.toFixed(1)).join(" ");
+  const area=line+` L ${pts[pts.length-1][0].toFixed(1)} ${h} L ${pts[0][0].toFixed(1)} ${h} Z`;
+  const id="g"+Math.round(pts[0][1]*1000+series.length);
+  return `<svg class="c-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <defs><linearGradient id="${id}" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="${color}" stop-opacity=".28"/>
+      <stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#${id})"/>
+    <path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function chgCell(label, val, unit){ // val null → "—"
+  if(val==null||isNaN(val)){ return `<div class="cc"><span class="cc-l">${label}</span><span class="cc-v">—</span></div>`; }
+  const cls = val>0?"up":(val<0?"dn":"");
+  const arr = val>0?"▲ +":(val<0?"▼ ":"");
+  const txt = unit==="%" ? Math.abs(val).toFixed(2)+"%" : Math.abs(val).toFixed(1)+" нэгж";
+  return `<div class="cc"><span class="cc-l">${label}</span><span class="cc-v ${cls}">${arr}${txt}</span></div>`;
+}
+function cardHtml(c){
+  const s=SNAP[c.key]; if(!s) return "";
+  const pct=(a,b)=>(a-b)/b*100;
+  const ser=s.series;
+  let last, spark="", footL="", footR="", dayCell, monCell, colorVal=0, hasSer=ser&&ser.length>=2;
+
+  if(hasSer){
+    const n=ser.length; last=ser[n-1];
+    if(c.freq==="daily"){
+      const day=pct(ser[n-1],ser[n-2]);
+      const li=Math.max(0,n-1-21);                 // ~22 арилжааны өдөр ≈ 1 сар
+      const mon=pct(ser[n-1],ser[li]);
+      dayCell=chgCell("Өдрийн",day,"%"); monCell=chgCell("Сарын",mon,"%"); colorVal=mon;
+    } else if(c.freq==="monthly"){                 // CPI — сар бүрийн, нэгжээр
+      const mon=ser[n-1]-ser[n-2];
+      dayCell=chgCell("Өдрийн",null); monCell=chgCell("Сарын",mon,"нэгж"); colorVal=mon;
+    } else if(c.freq==="annual"){                  // ДНБ — жилийн, нэгжээр
+      const an=ser[n-1]-ser[n-2];
+      dayCell=chgCell("Өдрийн",null); monCell=chgCell("Жилийн",an,"нэгж"); colorVal=an;
+    }
+    const good=c.upIsGood?colorVal>0:colorVal<0;
+    const sc = colorVal===0?"#56688a":(good?"#22e0a1":"#ff5277");
+    spark=sparkline(ser, sc);
+    footL=`Сүүлийн: ${c.dateOf?c.dateOf(s):(s.date||"")}`; footR=`${n} цэг`;
+  } else {                                          // spot — series байхгүй
+    last=s.latest;
+    dayCell = (s.changePct!=null) ? chgCell("Өдрийн",s.changePct,"%") : chgCell("Өдрийн",null);
+    monCell = chgCell("Сарын",null);
+    footL=`Огноо: ${s.date||"—"}`;
+  }
+  return `<div class="card" style="--accent:${c.accent}">
+    <div class="card-head">
+      <div><div class="c-name">${c.name}</div><div class="c-sub">${c.sub}</div></div>
+      <div class="c-tag" id="tag-${c.key}">snapshot</div>
+    </div>
+    <div class="c-val ${hasSer?'':'sm'}">${c.fmt(last)}</div>
+    <div class="c-changes">${dayCell}${monCell}</div>
+    ${spark}
+    <div class="c-foot"><span>${footL}</span><span>${footR}</span></div>
+  </div>`;
+}
+function render(){
+  const g={rate:[],econ:[],comm:[]};
+  CARDS.forEach(c=>{ if(g[c.section]) g[c.section].push(cardHtml(c)); });
+  document.getElementById("grid-rate").innerHTML=g.rate.join("");
+  document.getElementById("grid-econ").innerHTML=g.econ.join("");
+  document.getElementById("grid-comm").innerHTML=g.comm.join("");
+}
+
+/* ====== LIVE: CPI/ДНБ-г 1212.mn-ээс шууд, FX/TOP20-г live_extra.json-оос ====== */
+const NSO="https://data.1212.mn/api/v1/en/NSO";
+function tblUrl(p,t){return NSO+"/"+[...p,t].map(encodeURIComponent).join("/");}
+function flatten(res){
+  const ids=res.id,sz=res.size,val=res.value;
+  const ax=ids.map(dc=>{const cat=res.dimension[dc].category;
+    const codes=Object.keys(cat.index).sort((a,b)=>cat.index[a]-cat.index[b]);
+    return{label:res.dimension[dc].label,labels:codes.map(c=>cat.label[c])};});
+  const tot=sz.reduce((a,b)=>a*b,1),rows=[];
+  for(let i=0;i<tot;i++){let r=i;const o={};
+    for(let d=ids.length-1;d>=0;d--){const s=sz[d];o[ax[d].label]=ax[d].labels[r%s];r=Math.floor(r/s);}
+    o.value=val[i];rows.push(o);}
+  return rows;
+}
+async function nso(p,t,sel){
+  const url=tblUrl(p,t), meta=await(await fetch(url)).json();
+  const q=meta.variables.map(v=>{const x=sel[v.code];
+    return{code:v.code,selection:(x&&x!=="*")?{filter:"item",values:[].concat(x)}:{filter:"all",values:["*"]}};});
+  const res=await(await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({query:q,response:{format:"json-stat2"}})})).json();
+  return{meta,rows:flatten(res)};
+}
+function codeByText(meta,code,m){const v=meta.variables.find(x=>x.code===code);
+  const i=v.valueTexts.findIndex(t=>m(String(t).trim().toLowerCase()));return v.values[i];}
+
+async function liveCPI(){
+  const url=tblUrl(["Economy, environment","Consumer Price Index"],"DT_NSO_0600_010V1.px");
+  const meta=await(await fetch(url)).json();
+  const yc=codeByText(meta,"Суурь он",t=>t.includes("2020"));
+  const gc=codeByText(meta,"Бүлэг",t=>t.includes("overall"));
+  const {rows}=await nso(["Economy, environment","Consumer Price Index"],"DT_NSO_0600_010V1.px",{"Суурь он":yc,"Бүлэг":gc});
+  const mk=Object.keys(rows[0]).find(k=>k!=="value");
+  const cl=rows.filter(r=>r.value!=null).sort((a,b)=>String(a[mk]).localeCompare(String(b[mk]))).slice(-13);
+  return{labels:cl.map(r=>r[mk]),series:cl.map(r=>+r.value)};
+}
+async function liveGDP(){
+  const p=["Economy, environment","National Accounts"],t="DT_NSO_0500_001V3.px";
+  const url=tblUrl(p,t), meta=await(await fetch(url)).json();
+  const ic=codeByText(meta,"Статистик үзүүлэлт",x=>x.includes("annual changes"));
+  const sc=codeByText(meta,"Эдийн засгийн салбар",x=>x==="total"||x.includes("total"));
+  const {rows}=await nso(p,t,{"Статистик үзүүлэлт":ic,"Эдийн засгийн салбар":sc});
+  const yk=Object.keys(rows[0]).find(k=>k!=="value");
+  const cl=rows.filter(r=>r.value!=null).sort((a,b)=>parseInt(a[yk])-parseInt(b[yk]));
+  return{labels:cl.map(r=>r[yk]),series:cl.map(r=>+r.value)};
+}
+function mark(key,txt){const el=document.getElementById("tag-"+key);if(el)el.textContent=txt;}
+
+/* ====== Мэдээ (news.json, server талаас bloombergtv.mn) ====== */
+function relTime(s){
+  const t=new Date(String(s).replace(" ","T")); if(isNaN(t)) return s;
+  const diff=(Date.now()-t.getTime())/1000;
+  if(diff<3600) return Math.max(1,Math.round(diff/60))+" мин өмнө";
+  if(diff<86400) return Math.round(diff/3600)+" цагийн өмнө";
+  if(diff<7*86400) return Math.round(diff/86400)+" өдрийн өмнө";
+  return t.toLocaleDateString("mn-MN");
+}
+function renderNews(items){
+  const el=document.getElementById("newsList");
+  if(!items||!items.length){ el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:20px">Мэдээ ачаалагдсангүй (news.json хэрэгтэй — http серверээр нээнэ үү).</div>'; return; }
+  el.innerHTML=items.map(n=>{
+    const thumb=n.image
+      ? `<img class="news-thumb" src="${n.image}" loading="lazy" onerror="this.outerHTML='<div class=\\'news-thumb ph\\'>📰</div>'">`
+      : `<div class="news-thumb ph">📰</div>`;
+    const desc = n.description ? `<div class="news-desc">${n.description}</div>` : "";
+    const src = n.source ? `<span class="news-source">${n.source}</span>` : "";
+    const time = n.date ? `<span class="news-time">${relTime(n.date)}</span>` : "";
+    const sep = (n.source && n.date) ? `<span>·</span>` : "";
+    return `<a class="news-item" href="${n.url}" target="_blank" rel="noopener">
+      ${thumb}
+      <div class="news-body">
+        <div class="news-cat">${n.category||"Мэдээ"}</div>
+        <div class="news-title">${n.title}</div>
+        ${desc}
+        <div class="news-meta">${src}${sep}${time}<span style="margin-left:auto;color:var(--green)">↗</span></div>
+      </div></a>`;
+  }).join("");
+}
+
+/* ====== Заавар/түлхүүр үгээр мэдээ хайх (браузер → bloombergtv API, CORS нээлттэй) ====== */
+let searchMode=false, dataUpdated="";
+function mapSearch(arr){
+  return (arr||[]).map(n=>({
+    title:n.title,
+    description:n.description||"",
+    url:"https://www.bloombergtv.mn/news/"+n.slug,
+    category:(n.category&&n.category.name)||"Мэдээ",
+    source:"Bloomberg TV Mongolia",
+    image:(n.news_images&&n.news_images[0]&&n.news_images[0].image)?"https://www.bloombergtv.mn"+n.news_images[0].image:null,
+    date:n.createdAt||null
+  }));
+}
+async function doSearch(e){
+  if(e)e.preventDefault();
+  const kw=document.getElementById("kw").value.trim();
+  const mode=document.getElementById("newsMode");
+  if(kw.length<3){ mode.style.display="block"; mode.innerHTML="Дор хаяж 3 тэмдэгт оруулна уу."; return false; }
+  mode.style.display="block"; mode.innerHTML=`"<b>${kw}</b>" хайж байна…`;
+  try{
+    const r=await fetch("https://bloombergtv.mn/api/public/news/search",
+      {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({filterdata:kw})});
+    const arr=await r.json();
+    searchMode=true; document.getElementById("clearBtn").style.display="";
+    document.getElementById("newsChips").style.display="none";
+    const items=mapSearch(arr);
+    renderNews(items.slice(0,30));
+    const more=items.length>30?` (эхний 30-г харууллаа)`:``;
+    mode.innerHTML=`"<b>${kw}</b>" — ${items.length} мэдээ олдлоо${more} · <span style="cursor:pointer;text-decoration:underline" onclick="clearSearch()">сүүлийн мэдээ рүү буцах</span>`;
+  }catch(err){ mode.innerHTML=`Хайлт амжилтгүй (интернэт/CORS): ${err}`; }
+  return false;
+}
+function clearSearch(){
+  searchMode=false;
+  document.getElementById("kw").value="";
+  document.getElementById("clearBtn").style.display="none";
+  document.getElementById("newsMode").style.display="none";
+  document.getElementById("newsChips").style.display="";
+  loadNews();
+}
+let newsItems=[], activeCat="Бүгд";
+function buildChips(){
+  const counts={};
+  newsItems.forEach(n=>{const c=n.category||"Бусад";counts[c]=(counts[c]||0)+1;});
+  const cats=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+  const chips=[["Бүгд",newsItems.length],...cats.map(c=>[c,counts[c]])];
+  if(!cats.includes(activeCat)&&activeCat!=="Бүгд") activeCat="Бүгд";
+  document.getElementById("newsChips").innerHTML=chips.map(([c,n])=>
+    `<button class="chip${c===activeCat?' active':''}" onclick="setCat('${c.replace(/'/g,"\\'")}')">${c}<span class="n">${n}</span></button>`
+  ).join("");
+}
+function setCat(c){ activeCat=c; buildChips(); applyFilter(); }
+function applyFilter(){
+  const items=activeCat==="Бүгд"?newsItems:newsItems.filter(n=>(n.category||"Бусад")===activeCat);
+  renderNews(items);
+}
+async function loadNews(){
+  try{
+    const r=await fetch("news.json",{cache:"no-store"});
+    if(!r.ok) throw 0;
+    const j=await r.json();
+    newsItems=j.news||[];
+    buildChips();
+    applyFilter();
+    const src=document.getElementById("newsSrc");
+    if(src&&j.updated) src.textContent=`${j.source||"Bloomberg TV"} · ${j.updated.slice(0,16)}`;
+    return true;
+  }catch(e){ newsItems=[]; document.getElementById("newsChips").innerHTML=""; renderNews(null); return false; }
+}
+
+/* ====== 7 хоногийн тойм (weekly.json, beehiiv) ====== */
+function renderWeekly(items){
+  const el=document.getElementById("weeklyList");
+  if(!items||!items.length){ el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:20px">Тойм ачаалагдсангүй (weekly.json хэрэгтэй — update_weekly.ps1 ажиллуулна уу).</div>'; return; }
+  el.innerHTML=items.map(n=>{
+    const thumb=n.image
+      ? `<img class="news-thumb" src="${n.image}" loading="lazy" onerror="this.outerHTML='<div class=\\'news-thumb ph\\'>📅</div>'">`
+      : `<div class="news-thumb ph">📅</div>`;
+    const desc=n.description?`<div class="news-desc">${n.description}</div>`:"";
+    return `<a class="news-item" href="${n.url}" target="_blank" rel="noopener">
+      ${thumb}
+      <div class="news-body">
+        <div class="news-cat">7 хоногийн тойм</div>
+        <div class="news-title">${n.title}</div>
+        ${desc}
+        <div class="news-meta"><span class="news-source">NetCapital Insights</span><span>·</span><span class="news-time">${n.date?relTime(n.date):""}</span><span style="margin-left:auto;color:var(--green)">↗</span></div>
+      </div></a>`;
+  }).join("");
+}
+async function loadWeekly(){
+  try{
+    const r=await fetch("weekly.json",{cache:"no-store"}); if(!r.ok) throw 0;
+    const j=await r.json(); renderWeekly(j.items);
+    const s=document.getElementById("weeklySrc"); if(s&&j.updated) s.textContent=`${j.source} · ${j.updated.slice(0,16)}`;
+    return true;
+  }catch(e){ renderWeekly(null); return false; }
+}
+
+async function refreshAll(){
+  const dot=document.getElementById("liveDot"), txt=document.getElementById("liveText");
+  dot.className="dot off"; txt.textContent="Шинэчилж байна…";
+  let live=0;
+  await Promise.all([
+    liveCPI().then(d=>{SNAP.cpi=d;mark("cpi","🟢 live");live++;}).catch(()=>mark("cpi","snapshot")),
+    liveGDP().then(d=>{SNAP.gdp=d;mark("gdp","🟢 live");live++;}).catch(()=>mark("gdp","snapshot")),
+    fetch("live_extra.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{
+      if(!j) return;
+      if(j.updated) dataUpdated=j.updated;
+      if(j.fx){SNAP.fx={latest:j.fx.latest,date:j.fx.date,series:j.fx.series||SNAP.fx.series};mark("fx","🟢 live");live++;}
+      if(j.top20){SNAP.top20={latest:j.top20.latest,date:j.top20.date,series:j.top20.series||SNAP.top20.series};mark("top20","🟢 live");live++;}
+      if(j.commodities){
+        const cm=j.commodities, d=(j.updated||"").slice(0,10);
+        ["gold","copper","oil"].forEach(k=>{   // series-тэй
+          if(cm[k]&&(cm[k].series||cm[k].latest!=null)){ SNAP[k]={latest:cm[k].latest,series:cm[k].series||SNAP[k].series,date:d}; mark(k,"🟢 live"); live++; }
+        });
+        if(cm.coal&&cm.coal.latest!=null){ SNAP.coal={latest:cm.coal.latest,changePct:null,date:d}; mark("coal","🟢 live"); }
+      }
+      if(j.policy_rate){SNAP.policy={latest:j.policy_rate.latest,changePct:null,date:j.policy_rate.date};mark("policy","🟢 live");}
+      if(j.reserves){SNAP.reserves={latest:j.reserves.latest,changePct:null,unit:j.reserves.unit,date:j.reserves.date||""};mark("reserves","🟢 live");}
+    }).catch(()=>{}),
+    (searchMode?Promise.resolve():loadNews()),
+    loadWeekly(),
+  ]);
+  render();
+  const now=new Date().toLocaleTimeString("mn-MN",{hour:"2-digit",minute:"2-digit"});
+  if(live>0){dot.className="dot";txt.textContent=`Дата шинэчилсэн: ${dataUpdated||"—"} · шалгасан ${now}`;}
+  else{dot.className="dot off";txt.textContent=`Snapshot (${SNAP.asof}) · live татагдсангүй`;}
+}
+
+// file:// дээр нээвэл локал JSON (ханш/мэдээ/тойм) уншихгүй — анхааруулах
+if(location.protocol==="file:"){
+  const d=document.createElement("div");
+  d.style.cssText="background:var(--red-bg);border:1px solid var(--red);color:#ffb3c2;padding:13px 17px;border-radius:11px;margin-bottom:18px;font-size:13.5px;line-height:1.6";
+  d.innerHTML="⚠ <b>Файлыг шууд нээсэн байна (file://).</b> Браузер локал дата (ханш, мэдээ, 7 хоногийн тойм)-г аюулгүйн журмаар хориглодог тул эдгээр ачаалахгүй. <br><b>START.bat</b>-ыг 2 дарж нээнэ үү → <span style='color:#22e0a1'>http://localhost:8080/market_live.html</span>";
+  const w=document.querySelector(".wrap"), h=document.querySelector("header");
+  w.insertBefore(d, h.nextSibling);
+}
+function showPage(id, btn){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById("page-"+id).classList.add("active");
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+  if(btn) btn.classList.add("active");
+}
+
+render();
+refreshAll();
+setInterval(refreshAll, 5*60*1000);
+</script>
+</body>
+</html>
